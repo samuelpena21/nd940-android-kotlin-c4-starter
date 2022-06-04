@@ -1,8 +1,11 @@
 package com.udacity.project4.locationreminders.savereminder
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Transformations
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.PointOfInterest
 import com.udacity.project4.R
 import com.udacity.project4.base.BaseViewModel
@@ -14,23 +17,33 @@ import kotlinx.coroutines.launch
 
 class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSource) :
     BaseViewModel(app) {
-    val reminderTitle = MutableLiveData<String>()
-    val reminderDescription = MutableLiveData<String>()
-    val reminderSelectedLocationStr = MutableLiveData<String>()
-    val selectedPOI = MutableLiveData<PointOfInterest>()
-    val latitude = MutableLiveData<Double>()
-    val longitude = MutableLiveData<Double>()
+
+    private var _reminderData = MutableLiveData<ReminderDataItem>()
+    val reminderData = _reminderData
+
+    private val _latLng = MutableLiveData<LatLng>()
+
+    val isLocationSelected = Transformations.map(_latLng) { data ->
+        // The latitude and longitude should not be null nor 0.0
+        data != null
+    }
 
     /**
      * Clear the live data objects to start fresh next time the view model gets called
      */
     fun onClear() {
-        reminderTitle.value = null
-        reminderDescription.value = null
-        reminderSelectedLocationStr.value = null
-        selectedPOI.value = null
-        latitude.value = null
-        longitude.value = null
+        _reminderData.value = null
+        _latLng.value = null
+    }
+
+    fun setReminderData(reminderData: ReminderDataItem) {
+        _reminderData.value = reminderData
+        val longitude = reminderData.longitude
+        val latitude = reminderData.latitude
+
+        if (latitude != null && longitude != null && latitude != 0.0 && longitude != 0.0) {
+            _latLng.value = LatLng(latitude, longitude)
+        }
     }
 
     /**
@@ -45,7 +58,7 @@ class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSo
     /**
      * Save the reminder to the data source
      */
-    fun saveReminder(reminderData: ReminderDataItem) {
+    private fun saveReminder(reminderData: ReminderDataItem) {
         showLoading.value = true
         viewModelScope.launch {
             dataSource.saveReminder(
@@ -64,6 +77,27 @@ class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSo
         }
     }
 
+    fun onFailure(errorMessage: String) {
+        showToast.value = "There was an error"
+        Log.d("", "There was an error: $errorMessage")
+    }
+
+    fun selectLocation(latLng: LatLng?) {
+        _reminderData.value?.latitude = latLng?.latitude
+        _reminderData.value?.longitude = latLng?.longitude
+        _reminderData.value?.location = "${latLng?.latitude} ${latLng?.longitude}"
+        latLng?.let {
+            _latLng.value =  it
+        }
+    }
+
+    fun selectPoi(pointOfInterest: PointOfInterest) {
+        _reminderData.value?.latitude = pointOfInterest.latLng.latitude
+        _reminderData.value?.longitude = pointOfInterest.latLng.longitude
+        _reminderData.value?.location = pointOfInterest.name
+        _latLng.value = pointOfInterest.latLng
+    }
+
     /**
      * Validate the entered data and show error to the user if there's any invalid data
      */
@@ -78,5 +112,24 @@ class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSo
             return false
         }
         return true
+    }
+
+    fun delete() {
+        viewModelScope.launch {
+            val item = _reminderData.value
+            if (item != null) {
+                dataSource.deleteReminder(
+                    ReminderDTO(
+                        item.title,
+                        item.description,
+                        item.location,
+                        item.latitude,
+                        item.longitude,
+                        item.id
+                    )
+                )
+            }
+            navigationCommand.value = NavigationCommand.Back
+        }
     }
 }
