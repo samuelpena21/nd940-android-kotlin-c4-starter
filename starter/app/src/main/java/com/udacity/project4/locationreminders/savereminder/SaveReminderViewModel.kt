@@ -1,22 +1,21 @@
 package com.udacity.project4.locationreminders.savereminder
 
-import android.app.Application
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.PointOfInterest
 import com.udacity.project4.R
 import com.udacity.project4.base.BaseViewModel
 import com.udacity.project4.base.NavigationCommand
 import com.udacity.project4.locationreminders.data.ReminderDataSource
 import com.udacity.project4.locationreminders.data.dto.ReminderDTO
+import com.udacity.project4.locationreminders.data.dto.Result
 import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
 import kotlinx.coroutines.launch
 
-class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSource) :
-    BaseViewModel(app) {
+class SaveReminderViewModel(private val dataSource: ReminderDataSource) :
+    BaseViewModel() {
 
     private var _reminderData = MutableLiveData<ReminderDataItem>()
     val reminderData = _reminderData
@@ -72,30 +71,30 @@ class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSo
                 )
             )
             showLoading.value = false
-            showToast.value = app.getString(R.string.reminder_saved)
+            showToast.value = "Reminder Saved !"
             navigationCommand.value = NavigationCommand.Back
         }
     }
 
     fun onFailure(errorMessage: String) {
         showToast.value = "There was an error"
-        Log.d("", "There was an error: $errorMessage")
+        Log.d("SaveReminderViewModel", "There was an error: $errorMessage")
     }
 
-    fun selectLocation(latLng: LatLng?) {
+    fun selectLocation(latLng: LatLng?, location: String?) {
         _reminderData.value?.latitude = latLng?.latitude
         _reminderData.value?.longitude = latLng?.longitude
-        _reminderData.value?.location = "${latLng?.latitude} ${latLng?.longitude}"
-        latLng?.let {
-            _latLng.value =  it
-        }
-    }
 
-    fun selectPoi(pointOfInterest: PointOfInterest) {
-        _reminderData.value?.latitude = pointOfInterest.latLng.latitude
-        _reminderData.value?.longitude = pointOfInterest.latLng.longitude
-        _reminderData.value?.location = pointOfInterest.name
-        _latLng.value = pointOfInterest.latLng
+        val latLngString = if (latLng != null) {
+            "${latLng.latitude} ${latLng.longitude}"
+        } else {
+            ""
+        }
+
+        _reminderData.value?.location = location ?: latLngString
+        latLng?.let {
+            _latLng.value = it
+        }
     }
 
     /**
@@ -114,21 +113,28 @@ class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSo
         return true
     }
 
-    fun delete() {
+    fun delete(reminderData: ReminderDataItem) {
+        showLoading.value = true
         viewModelScope.launch {
-            val item = _reminderData.value
-            if (item != null) {
-                dataSource.deleteReminder(
-                    ReminderDTO(
-                        item.title,
-                        item.description,
-                        item.location,
-                        item.latitude,
-                        item.longitude,
-                        item.id
-                    )
+            val result = dataSource.deleteReminder(
+                ReminderDTO(
+                    reminderData.title,
+                    reminderData.description,
+                    reminderData.location,
+                    reminderData.latitude,
+                    reminderData.longitude,
+                    reminderData.id
                 )
+            )
+            when (result) {
+                is Result.Error -> {
+                    showToast.value = "Could not delete reminder"
+                }
+                is Result.Success -> {
+                    showToast.value = "Reminder deleted!"
+                }
             }
+            showLoading.value = false
             navigationCommand.value = NavigationCommand.Back
         }
     }

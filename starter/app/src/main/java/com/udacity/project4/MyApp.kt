@@ -24,7 +24,6 @@ class MyApp : Application() {
             // by viewModel()
             viewModel {
                 RemindersListViewModel(
-                    get(),
                     get() as ReminderDataSource
                 )
             }
@@ -32,7 +31,6 @@ class MyApp : Application() {
             single {
                 //This view model is declared singleton to be used across multiple fragments
                 SaveReminderViewModel(
-                    get(),
                     get() as ReminderDataSource
                 )
             }

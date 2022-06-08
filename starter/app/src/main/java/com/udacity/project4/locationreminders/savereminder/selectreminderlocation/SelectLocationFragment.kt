@@ -188,7 +188,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             removeMarker()
             val snippet = poi.name
 
-            _viewModel.selectPoi(poi)
+            _viewModel.selectLocation(poi.latLng, poi.name)
 
             marker = googleMap.addMarker(
                 MarkerOptions()
@@ -210,7 +210,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                 latLng.longitude
             )
 
-            _viewModel.selectLocation(latLng)
+            _viewModel.selectLocation(latLng, null)
 
             marker = googleMap.addMarker(
                 MarkerOptions()
@@ -224,7 +224,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     private fun removeMarker() {
         marker?.remove()
-        _viewModel.selectLocation(null)
+        _viewModel.selectLocation(null, null)
     }
 
     @SuppressLint("MissingPermission")

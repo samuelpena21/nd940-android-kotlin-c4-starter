@@ -183,7 +183,9 @@ class SaveReminderFragment : BaseFragment() {
     private fun deleteItem() {
         geofencingClient.removeGeofences(geoFencePendingIntent)?.run {
             addOnCompleteListener {
-                _viewModel.delete()
+                _viewModel.reminderData.value?.let {
+                    _viewModel.delete(it)
+                }
             }
         }
     }
