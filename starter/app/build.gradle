@@ -89,6 +89,11 @@ dependencies {
     implementation "io.insert-koin:koin-android:$koinVersion"
     implementation "io.insert-koin:koin-androidx-viewmodel:$koinVersion"
 
+    // Koin Test features
+    testImplementation "io.insert-koin:koin-test:$koinVersion"
+
+    androidTestImplementation "io.insert-koin:koin-test:$koinVersion"
+
 
     // Dependencies for local unit tests
     testImplementation "junit:junit:$junitVersion"
@@ -125,7 +130,8 @@ dependencies {
     implementation "androidx.fragment:fragment:$fragmentVersion"
     androidTestImplementation "org.mockito:mockito-core:$mockitoVersion"
     androidTestImplementation "com.linkedin.dexmaker:dexmaker-mockito:$dexMakerVersion"
-    androidTestImplementation('org.koin:koin-test:2.0.1') { exclude group: 'org.mockito' }
+
+//    androidTestImplementation('org.koin:koin-test:2.0.1') { exclude group: 'org.mockito' }
     androidTestImplementation "com.google.truth:truth:1.1.3"
 
 

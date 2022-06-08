@@ -16,6 +16,8 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
+import org.koin.test.AutoCloseKoinTest
+import org.koin.test.get
 
 @RunWith(AndroidJUnit4::class)
 @LargeTest
