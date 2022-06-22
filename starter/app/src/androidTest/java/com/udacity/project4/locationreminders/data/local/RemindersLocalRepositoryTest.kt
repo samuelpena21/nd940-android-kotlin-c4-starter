@@ -12,15 +12,12 @@ import com.udacity.project4.locationreminders.data.dto.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
-import org.hamcrest.CoreMatchers.`is`
-import org.hamcrest.CoreMatchers.instanceOf
-import org.hamcrest.MatcherAssert.assertThat
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.random.Random
 
 @ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
@@ -66,7 +63,6 @@ class RemindersLocalRepositoryTest {
         )
 
         localDataSource.saveReminder(reminder)
-        database.reminderDao().saveReminder(reminder)
 
         val result = localDataSource.getReminder(reminder.id)
 
@@ -75,6 +71,14 @@ class RemindersLocalRepositoryTest {
         Truth.assertThat(result.data.id).isEqualTo(reminder.id)
         Truth.assertThat(result.data.title).isEqualTo(reminder.title)
         Truth.assertThat(result.data.description).isEqualTo(reminder.description)
+    }
+
+    @Test
+    fun getReminder_shouldReturnError() = runBlocking {
+        val result = localDataSource.getReminder(Random(99).toString())
+
+        result as Result.Error
+        Truth.assertThat(result.message).isEqualTo("Reminder not found!")
     }
 
     @Test

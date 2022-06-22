@@ -15,7 +15,9 @@
  */
 package com.udacity.project4.util
 
+import android.app.Activity
 import android.view.View
+import android.widget.Toolbar
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
@@ -24,6 +26,7 @@ import androidx.fragment.app.testing.FragmentScenario
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.IdlingResource
 import java.util.UUID
+import com.udacity.project4.R
 
 /**
  * An espresso idling resource implementation that reports idle status for all data binding
