@@ -21,6 +21,7 @@ import androidx.core.app.ActivityCompat
 import androidx.databinding.DataBindingUtil
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.Geofence
+import com.google.android.gms.location.Geofence.NEVER_EXPIRE
 import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationRequest
@@ -36,6 +37,8 @@ import com.udacity.project4.utils.isLocationPermissionGranted
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import java.util.concurrent.TimeUnit
+
+const val DEFAULT_OVERLAY_SIZE = 100f
 
 @SuppressLint("UnspecifiedImmutableFlag")
 class SaveReminderFragment : BaseFragment() {
@@ -59,7 +62,7 @@ class SaveReminderFragment : BaseFragment() {
             if (it) {
                 _viewModel.showToast.value = "Permission granted!"
                 _viewModel.reminderData.value?.let { item ->
-                    addGeofenceForClue(item)
+                    addGeofenceForReminderDataItem(item)
                 }
             } else {
                 _viewModel.showToast.value =
@@ -72,7 +75,7 @@ class SaveReminderFragment : BaseFragment() {
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             _viewModel.reminderData.value?.let {
-                addGeofenceForClue(it)
+                addGeofenceForReminderDataItem(it)
             }
         }
     }
@@ -121,20 +124,22 @@ class SaveReminderFragment : BaseFragment() {
         binding.saveReminder.setOnClickListener {
             val reminderDataItem = _viewModel.reminderData.value
             reminderDataItem?.let {
-                addGeofenceForClue(it)
+                addGeofenceForReminderDataItem(it)
             }
         }
     }
 
-    private fun addGeofenceForClue(reminderDataItem: ReminderDataItem) {
+    @SuppressLint("MissingPermission")
+    private fun addGeofenceForReminderDataItem(reminderDataItem: ReminderDataItem) {
         val geofence = Geofence.Builder()
             .setRequestId(reminderDataItem.id)
             .setCircularRegion(
                 reminderDataItem.latitude ?: 0.0,
                 reminderDataItem.longitude ?: 0.0,
-                100f
+                DEFAULT_OVERLAY_SIZE
             )
-            .setExpirationDuration(TimeUnit.HOURS.toMillis(1))
+            .setNotificationResponsiveness(300000) // Will be called within 5 minutes
+            .setExpirationDuration(NEVER_EXPIRE)
             .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
             .build()
 
@@ -143,40 +148,27 @@ class SaveReminderFragment : BaseFragment() {
             .addGeofence(geofence)
             .build()
 
-        geofencingClient.removeGeofences(geoFencePendingIntent)?.run {
-            addOnCompleteListener {
-                if (_viewModel.validateEnteredData(reminderDataItem)) {
-                    if (!requireActivity().isLocationPermissionGranted()) {
-                        resultCallback.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                        return@addOnCompleteListener
-                    }
+        if (_viewModel.validateEnteredData(reminderDataItem)) {
+            if (!requireActivity().isLocationPermissionGranted()) {
+                resultCallback.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                return
+            }
 
-                    if (!foregroundAndBackgroundLocationPermissionApproved()) {
-                        resultCallback.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                        return@addOnCompleteListener
-                    }
+            if (!foregroundAndBackgroundLocationPermissionApproved()) {
+                resultCallback.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                return
+            }
 
-                    validateLocationIsEnabled {
-                        addGeoFence(reminderDataItem, geofencingRequest, geoFencePendingIntent)
+            validateLocationIsEnabled {
+                geofencingClient.addGeofences(geofencingRequest, geoFencePendingIntent)?.run {
+                    addOnSuccessListener {
+                        _viewModel.validateAndSaveReminder(reminderDataItem)
+                    }
+                    addOnFailureListener {
+                        val message = it.message
+                        _viewModel.onFailure(message.orEmpty())
                     }
                 }
-            }
-        }
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun addGeoFence(
-        reminderDataItem: ReminderDataItem,
-        geofencingRequest: GeofencingRequest,
-        geoFencePendingIntent: PendingIntent
-    ) {
-        geofencingClient.addGeofences(geofencingRequest, geoFencePendingIntent)?.run {
-            addOnSuccessListener {
-                _viewModel.validateAndSaveReminder(reminderDataItem)
-            }
-            addOnFailureListener {
-                val message = it.message
-                _viewModel.onFailure(message.orEmpty())
             }
         }
     }

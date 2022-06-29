@@ -2,8 +2,6 @@ package com.udacity.project4.locationreminders.savereminder.selectreminderlocati
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity.RESULT_OK
-import android.content.IntentSender
 import android.content.res.Resources
 import android.os.Bundle
 import android.util.Log
@@ -13,14 +11,9 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.VisibleForTesting
 import androidx.databinding.DataBindingUtil
-import com.google.android.gms.common.api.ResolvableApiException
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -43,7 +36,6 @@ import java.util.Locale
 
 const val DEFAULT_ZOOM_LEVEL = 18f
 const val DEFAULT_COORDINATE = 0.0
-const val DEFAULT_OVERLAY_SIZE = 100f
 
 class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
@@ -74,14 +66,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                 enableLocation()
             }
         }
-
-    private val resultLauncher = registerForActivityResult(
-        ActivityResultContracts.StartIntentSenderForResult()
-    ) { result ->
-        if (result.resultCode == RESULT_OK) {
-            enableLocation()
-        }
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -262,45 +246,14 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     @SuppressLint("MissingPermission")
     private fun enableLocation() {
         if (requireActivity().isLocationPermissionGranted()) {
-            validateLocationIsEnabled {
-                map.isMyLocationEnabled = true
-            }
+            map.isMyLocationEnabled = true
         } else {
             locationPermissionResult.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
-    }
-
-    private fun validateLocationIsEnabled(onLocationEnabled: () -> Unit) {
-        val locationRequest = LocationRequest.create().apply {
-            priority = LocationRequest.PRIORITY_LOW_POWER
-        }
-        val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
-        val settingClient = LocationServices.getSettingsClient(requireContext())
-        val responseTask = settingClient.checkLocationSettings(builder.build())
-        responseTask.addOnFailureListener { exception ->
-            if (exception is ResolvableApiException) {
-                try {
-                    val intentSenderRequest =
-                        IntentSenderRequest.Builder(exception.resolution).build()
-                    resultLauncher.launch(intentSenderRequest)
-                } catch (e: IntentSender.SendIntentException) {
-                    Log.e(TAG, "Location request exception: ${e.message}")
-                }
-            } else {
-                _viewModel.showSnackBar.value = "You must enable location"
-            }
-        }
-
-        responseTask.addOnCompleteListener {
-            if (it.isSuccessful) {
-                onLocationEnabled()
-            }
         }
     }
 
     companion object {
         val TAG: String = SelectLocationFragment::class.java.name
         const val REMINDER_DATA_ITEM_ARG = "reminderDataItem"
-        const val REQUEST_TURN_DEVICE_LOCATION_ON = 365
     }
 }
