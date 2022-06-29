@@ -36,6 +36,5 @@ class ReminderDescriptionActivity : AppCompatActivity() {
             R.layout.activity_reminder_description
         )
         binding.reminderDataItem = reminderDataItem
-//        TODO: Add the implementation of the reminder details
     }
 }

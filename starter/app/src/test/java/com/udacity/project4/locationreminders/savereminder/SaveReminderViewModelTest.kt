@@ -24,8 +24,7 @@ class SaveReminderViewModelTest {
     @get:Rule
     var mainCoroutineRule = MainCoroutineRule()
 
-    //TODO: provide testing to the SaveReminderView and its live data objects
-    private lateinit var reminderDataSource: ReminderDataSource
+    private lateinit var reminderDataSource: FakeDataSource
     private lateinit var saveReminderViewModel: SaveReminderViewModel
 
     @Before
@@ -189,16 +188,10 @@ class SaveReminderViewModelTest {
         }
         assertThat(data.isNotEmpty()).isTrue()
 
+        reminderDataSource.setReturnError(true)
         saveReminderViewModel.delete(ReminderDataItem("", "", "", null, null))
 
-        val resultAfterDelete = reminderDataSource.getReminders()
-        val dataAfterDelete = if (resultAfterDelete is Result.Success) {
-            resultAfterDelete.data
-        } else {
-            emptyList()
-        }
 
-        assertThat(dataAfterDelete.isNotEmpty()).isTrue()
         assertThat(saveReminderViewModel.showToast.value).isEqualTo("Could not delete reminder")
     }
 

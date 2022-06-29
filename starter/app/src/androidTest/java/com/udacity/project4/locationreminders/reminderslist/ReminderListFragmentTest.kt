@@ -59,7 +59,7 @@ class ReminderListFragmentTest : AutoCloseKoinTest() {
                     get() as ReminderDataSource
                 )
             }
-            single { FakeAndroidReminderRepository() }
+            single { FakeAndroidReminderRepository() as ReminderDataSource }
         }
         //declare a new koin module
         startKoin {

@@ -27,12 +27,11 @@ class MyApp : Application() {
                     get() as ReminderDataSource
                 )
             }
+            viewModel { SaveReminderViewModel(get() as ReminderDataSource) }
             //Declare singleton definitions to be later injected using by inject()
             single {
                 //This view model is declared singleton to be used across multiple fragments
-                SaveReminderViewModel(
-                    get() as ReminderDataSource
-                )
+
             }
             single { RemindersLocalRepository(get()) as ReminderDataSource }
             single { LocalDB.createRemindersDao(this@MyApp) }

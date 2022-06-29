@@ -27,6 +27,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.IdlingResource
 import java.util.UUID
 import com.udacity.project4.R
+import kotlinx.android.synthetic.main.activity_reminders.*
 
 /**
  * An espresso idling resource implementation that reports idle status for all data binding
@@ -75,6 +76,11 @@ class DataBindingIdlingResource : IdlingResource {
     /**
      * Find all binding classes in all currently available fragments.
      */
+    /*
+    * Fix an issue with the backStack following this thread:
+    * https://knowledge.udacity.com/questions/823201
+    * */
+
     private fun getBindings(): List<ViewDataBinding> {
         val fragments = (activity as? FragmentActivity)
             ?.supportFragmentManager
@@ -84,6 +90,8 @@ class DataBindingIdlingResource : IdlingResource {
             fragments?.mapNotNull {
                 it.view?.getBinding()
             } ?: emptyList()
+        if (activity.parent == null) return emptyList()
+
         val childrenBindings = fragments?.flatMap { it.childFragmentManager.fragments }
             ?.mapNotNull { it.view?.getBinding() } ?: emptyList()
 

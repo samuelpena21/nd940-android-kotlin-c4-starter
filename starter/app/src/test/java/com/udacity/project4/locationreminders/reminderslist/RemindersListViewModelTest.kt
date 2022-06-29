@@ -21,7 +21,7 @@ class RemindersListViewModelTest {
     @get:Rule
     var mainCoroutineRule = MainCoroutineRule()
 
-    private lateinit var reminderDataSource: ReminderDataSource
+    private lateinit var reminderDataSource: FakeDataSource
     private lateinit var remindersListViewModel: RemindersListViewModel
 
     @Before
@@ -41,6 +41,22 @@ class RemindersListViewModelTest {
         mainCoroutineRule.resumeDispatcher()
 
         assertThat(remindersListViewModel.showLoading.value).isEqualTo(false)
+    }
+
+    @Test
+    fun loadReminders_loading_error() {
+        // We pause the dispatcher to make the test run synchronously
+        mainCoroutineRule.pauseDispatcher()
+
+        reminderDataSource.setReturnError(true)
+        remindersListViewModel.loadReminders()
+
+        assertThat(remindersListViewModel.showLoading.value).isEqualTo(true)
+        // Then resume it to resume the coroutines
+        mainCoroutineRule.resumeDispatcher()
+
+        assertThat(remindersListViewModel.showLoading.value).isEqualTo(false)
+        assertThat(remindersListViewModel.showSnackBar.value).isEqualTo("There was an error")
     }
 
     @Test
